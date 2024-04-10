@@ -11,6 +11,8 @@ my_settings = project.Settings(
                 #project_workflow=project.ProjectWorkflow.UVTile
             )
 
+open_file_path = '.'
+
 def start_plugin():
     # Create a simple widget
     button = QtWidgets.QPushButton("Create new project")
@@ -27,23 +29,28 @@ def start_plugin():
 
 def select_mesh():
     if project.is_open():
-        print("There is already a project opened!")
-        return
+        project.close()
     
-    files = QtWidgets.QFileDialog.getOpenFileName(None, 'Open File', '.', '*.obj *.fbx')
+    global open_file_path
+    files = QtWidgets.QFileDialog.getOpenFileName(None, 'Open a Mesh to Import', open_file_path, '*.obj *.fbx')
+    open_file_path = os.path.dirname(files[0])
     create_new_project(files[0])
 
 def create_new_project(mesh_file_path):
-    
+    # create new project using selected mesh file
     project.create(mesh_file_path, settings=my_settings)
 
-    # import textures
+    # import textures into project shelf
     textures_folder = next(os.walk(os.path.dirname(mesh_file_path)))[1][0]
     mesh_textures_folder = os.path.join(os.path.dirname(mesh_file_path), textures_folder)
     files_list = [f for f in os.listdir(mesh_textures_folder) if os.path.isfile(os.path.join(mesh_textures_folder, f))]
     for file in files_list:
         print("Importing: " + file)
         resource.import_project_resource(os.path.join(mesh_textures_folder, file), resource.Usage.TEXTURE)
+
+    resource.Shelves.refresh_all()
+
+
 
 
 def close_plugin():
